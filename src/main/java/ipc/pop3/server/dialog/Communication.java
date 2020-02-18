@@ -10,6 +10,8 @@ public class Communication implements Runnable {
 
     private static int CommID;
 
+    private String etat;
+
     private Socket clt_socket;
     private Logger _log = LoggerFactory.getLogger(Communication.class);
     private BufferedReader in;
@@ -22,6 +24,7 @@ public class Communication implements Runnable {
         clt_socket = socket;
         bos = new BufferedOutputStream(clt_socket.getOutputStream());
         bis = new BufferedInputStream(clt_socket.getInputStream());
+
     }
 
 
@@ -33,6 +36,96 @@ public class Communication implements Runnable {
 
             String[] head = line.split(" ");
             String request = head[0];
+            switch (request) {
+                case "APOP":
+                    switch (etat){
+                        case "AUTH":
+
+                        default:
+                            out.write("- ERR action indisponible à ce stade");
+                            out.flush();
+                    }
+                case "USER":
+                    switch (etat){
+                        case "AUTH":
+
+                        default:
+                            out.write("- ERR action indisponible à ce stade");
+                            out.flush();
+                    }
+                case "PASS":
+                    switch (etat){
+                        case "WAIT PASS":
+
+                        default:
+                            out.write("- ERR action indisponible à ce stade");
+                            out.flush();
+                    }
+                case "QUIT":
+                    switch (etat){
+                        case "TRANSACTION":
+
+                        default:
+                            out.write("- ERR action indisponible à ce stade");
+                            out.flush();
+                    }
+                case "STAT":
+                    switch (etat){
+                        case "TRANSACTION":
+
+                        default:
+                            out.write("- ERR action indisponible à ce stade");
+                            out.flush();
+                    }
+                case "LIST":
+                    switch (etat){
+                        case "TRANSACTION":
+
+                        default:
+                            out.write("- ERR action indisponible à ce stade");
+                            out.flush();
+                    }
+                case "RETR":
+                    switch (etat){
+                        case "TRANSACTION":
+
+                        default:
+                            out.write("- ERR action indisponible à ce stade");
+                            out.flush();
+                    }
+                case "NOOP":
+                    switch (etat){
+                        case "TRANSACTION":
+
+                        default:
+                            out.write("- ERR action indisponible à ce stade");
+                            out.flush();
+                    }
+                case "DELE":
+                    switch (etat){
+                        case "TRANSACTION":
+
+                        default:
+                            out.write("- ERR action indisponible à ce stade");
+                            out.flush();
+                    }
+                case "RSET":
+                    switch (etat){
+                        case "TRANSACTION":
+
+                        default:
+                            out.write("- ERR action indisponible à ce stade");
+                            out.flush();
+                    }
+
+
+                default:
+                    out.write("- ERR action inconue");
+                    out.flush();
+
+            }
+
+
             String filename = "";
             for (int i = 1; i < head.length - 2; i ++) {
                 filename += head[i] + " ";
@@ -148,7 +241,9 @@ public class Communication implements Runnable {
             _log.error("Erreur lors de l'initialisation de l'émission");
             _log.error(e.getMessage());
         }
-
+        out.write("+OK Server ready");
+        out.flush();
+        etat="authorisation";
         while (!recevoir()) {/*Reçoit et répond au client*/}
         _log.debug("Fermeture de la communication" + CommID);
         try {
