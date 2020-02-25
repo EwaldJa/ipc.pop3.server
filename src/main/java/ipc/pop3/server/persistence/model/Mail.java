@@ -47,6 +47,10 @@ public class Mail {
 
     }
 
+    public int getSize() {
+        return this.toPOP3String().length();
+    }
+
     public Long getId() {
         return id;
     }

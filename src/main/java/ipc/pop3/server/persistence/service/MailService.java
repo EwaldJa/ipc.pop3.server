@@ -29,6 +29,8 @@ public class MailService {
         if (sender==null || "".equals(sender) || "".equals(sender.replace(" ", ""))) {
             throw new InvalidSenderException("The sender is not valid for this mail : '" + sender + "'.");
         }
-        Mail newMail = new Mail()
+        //TODO: create mail
+        //Mail newMail = new Mail();
+        return null;
     }
 }
