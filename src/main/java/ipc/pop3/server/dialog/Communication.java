@@ -1,15 +1,31 @@
 package ipc.pop3.server.dialog;
 
+import ipc.pop3.server.persistence.model.Mail;
+import ipc.pop3.server.persistence.model.User;
+import ipc.pop3.server.persistence.service.MailService;
+import ipc.pop3.server.persistence.service.UserService;
+import ipc.pop3.server.utils.exceptions.InvalidPasswordException;
+import ipc.pop3.server.utils.exceptions.InvalidUsernameException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.*;
 import java.net.Socket;
+import java.sql.Timestamp;
+import java.util.List;
 
 public class Communication implements Runnable {
 
     private static int CommID;
 
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private MailService mailService;
+
+    private Timestamp timestamp;
     private String etat;
 
     private Socket clt_socket;
@@ -19,7 +35,7 @@ public class Communication implements Runnable {
     private BufferedOutputStream bos;
     private BufferedInputStream bis;
 
-    public Communication(Socket socket) throws IOException{
+    public Communication(Socket socket) throws IOException {
         CommID++;
         clt_socket = socket;
         bos = new BufferedOutputStream(clt_socket.getOutputStream());
@@ -37,114 +53,132 @@ public class Communication implements Runnable {
             String[] head = line.split(" ");
             String request = head[0];
             switch (request) {
+                //TO DO
                 case "APOP":
-                    switch (etat){
+                    switch (etat) {
                         case "AUTH":
+                            String username = head[1];
+                            String passHashed = head[2];
+                            try {
+                                User user = userService.logUser(username, passHashed, timestamp);
+                                List<Mail> mails = mailService.findByUser(user);
+
+                            } catch (InvalidUsernameException InvalidPasswordException) {
+                                out.write("-ERR permission denied");
+                                out.flush();
+                            }
 
                         default:
-                            out.write("- ERR action indisponible à ce stade");
+                            out.write("-ERR action indisponible à ce stade");
                             out.flush();
                     }
                 case "USER":
-                    switch (etat){
+                    switch (etat) {
                         case "AUTH":
-
+                            //TODO un jour
                         default:
-                            out.write("- ERR action indisponible à ce stade");
+                            out.write("-ERR action indisponible à ce stade");
                             out.flush();
                     }
                 case "PASS":
-                    switch (etat){
+                    switch (etat) {
                         case "WAIT PASS":
-
+                            //TODO un jour
                         default:
-                            out.write("- ERR action indisponible à ce stade");
+                            out.write("-ERR action indisponible à ce stade");
                             out.flush();
                     }
                 case "QUIT":
-                    switch (etat){
+                    switch (etat) {
                         case "TRANSACTION":
+                            //TODO
+                            //update
+                            out.write("+OK");
 
-                        default:
-                            out.write("- ERR action indisponible à ce stade");
                             out.flush();
+                            return false;
+                        default:
+
+                            out.write("+OK");
+                            out.flush();
+                            return false;
                     }
                 case "STAT":
-                    switch (etat){
+                    switch (etat) {
                         case "TRANSACTION":
-
+                            //TODO
                         default:
-                            out.write("- ERR action indisponible à ce stade");
+                            out.write("-ERR action indisponible à ce stade");
                             out.flush();
                     }
                 case "LIST":
-                    switch (etat){
+                    switch (etat) {
                         case "TRANSACTION":
-
+                            //TODO un jour
                         default:
-                            out.write("- ERR action indisponible à ce stade");
+                            out.write("-ERR action indisponible à ce stade");
                             out.flush();
                     }
                 case "RETR":
-                    switch (etat){
+                    switch (etat) {
                         case "TRANSACTION":
-
+                            //TODO
                         default:
-                            out.write("- ERR action indisponible à ce stade");
+                            out.write("-ERR action indisponible à ce stade");
                             out.flush();
                     }
                 case "NOOP":
-                    switch (etat){
+                    switch (etat) {
                         case "TRANSACTION":
-
+                            //TODO un jour
                         default:
-                            out.write("- ERR action indisponible à ce stade");
+                            out.write("-ERR action indisponible à ce stade");
                             out.flush();
                     }
                 case "DELE":
-                    switch (etat){
+                    switch (etat) {
                         case "TRANSACTION":
-
+                            //TODO un jour
                         default:
-                            out.write("- ERR action indisponible à ce stade");
+                            out.write("-ERR action indisponible à ce stade");
                             out.flush();
                     }
                 case "RSET":
-                    switch (etat){
+                    switch (etat) {
                         case "TRANSACTION":
-
+                            //TODO un jour
                         default:
-                            out.write("- ERR action indisponible à ce stade");
+                            out.write("-ERR action indisponible à ce stade");
                             out.flush();
                     }
 
 
                 default:
-                    out.write("- ERR action inconue");
+                    out.write("-ERR action inconue");
                     out.flush();
 
             }
 
 
             String filename = "";
-            for (int i = 1; i < head.length - 2; i ++) {
+            for (int i = 1; i < head.length - 2; i++) {
                 filename += head[i] + " ";
                 System.out.println(filename);
             }
-            filename += head[head.length-2];
+            filename += head[head.length - 2];
             if (filename.charAt(0) == '/') {
                 filename = filename.substring(1);
             }
-            String httpVersion = head[head.length-1];
+            String httpVersion = head[head.length - 1];
 
-            _log.debug("Requête reçue : " + line + " , requete " + request +", fichier " + filename + ", http " + httpVersion);
+            _log.debug("Requête reçue : " + line + " , requete " + request + ", fichier " + filename + ", http " + httpVersion);
 
             if (!httpVersion.equals("HTTP/1.1")) {
                 sendError(505);
                 return true;
             }
 
-            int length=0;
+            int length = 0;
             boolean headerskipped = false;
             while (!headerskipped) {
                 line = in.readLine();
@@ -164,7 +198,7 @@ public class Communication implements Runnable {
                 if (field[0].equals("Content-Length:")) {
                     length = Integer.parseInt(field[1]);
                 }
-                _log.debug("headerskipped:"+headerskipped);
+                _log.debug("headerskipped:" + headerskipped);
             }
             _log.debug("Header passé");
             switch (request) {
@@ -241,9 +275,10 @@ public class Communication implements Runnable {
             _log.error("Erreur lors de l'initialisation de l'émission");
             _log.error(e.getMessage());
         }
-        out.write("+OK Server ready");
+        timestamp = new Timestamp(System.currentTimeMillis());
+        out.write("+OK Server ready <" + timestamp + "@EwaldEtLucas.ipc>");
         out.flush();
-        etat="authorisation";
+        etat = "authorisation";
         while (!recevoir()) {/*Reçoit et répond au client*/}
         _log.debug("Fermeture de la communication" + CommID);
         try {
@@ -255,7 +290,7 @@ public class Communication implements Runnable {
 
     }
 
-    public void finalize() throws Throwable{
+    public void finalize() throws Throwable {
         clt_socket.close();
         super.finalize();
     }
