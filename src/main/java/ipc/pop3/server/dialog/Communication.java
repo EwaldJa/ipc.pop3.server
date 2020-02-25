@@ -27,6 +27,8 @@ public class Communication implements Runnable {
 
     private Timestamp timestamp;
     private String etat;
+    private User user;
+    List<Mail> mails;
 
     private Socket clt_socket;
     private Logger _log = LoggerFactory.getLogger(Communication.class);
@@ -60,10 +62,12 @@ public class Communication implements Runnable {
                             String username = head[1];
                             String passHashed = head[2];
                             try {
-                                User user = userService.logUser(username, passHashed, timestamp);
-                                List<Mail> mails = mailService.findByUser(user);
-
-                            } catch (InvalidUsernameException InvalidPasswordException) {
+                                user = userService.logUser(username, passHashed, timestamp);
+                                mails = mailService.findByUser(user);
+                                int nombreOctets = Mail.getSize(mails);
+                                out.write("+OK maildrop has " + mails.size() + " message (" + nombreOctets + " octets)");
+                                out.flush();
+                            } catch (InvalidUsernameException | InvalidPasswordException e) {
                                 out.write("-ERR permission denied");
                                 out.flush();
                             }
@@ -106,7 +110,9 @@ public class Communication implements Runnable {
                 case "STAT":
                     switch (etat) {
                         case "TRANSACTION":
-                            //TODO
+                            int nombreOctets = Mail.getSize(mails);
+                            out.write("+OK " + mails.size() + " " + nombreOctets);
+                            out.flush();
                         default:
                             out.write("-ERR action indisponible à ce stade");
                             out.flush();

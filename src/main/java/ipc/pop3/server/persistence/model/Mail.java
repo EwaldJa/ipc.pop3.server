@@ -1,13 +1,17 @@
 package ipc.pop3.server.persistence.model;
 
-import javax.persistence.*;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.sql.Timestamp;
+import java.util.List;
 
 @Table(name = "mail")
 public class Mail {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     private String subject;
     private String message;
@@ -15,9 +19,10 @@ public class Mail {
     private User recipient;
     private Timestamp date;
 
-    protected Mail () {}
+    protected Mail() {
+    }
 
-    public Mail (String subject, String message, String sender, User recipient) {
+    public Mail(String subject, String message, String sender, User recipient) {
         this.subject = subject;
         this.message = message;
         this.sender = sender;
@@ -36,15 +41,22 @@ public class Mail {
                 "From: <%s>\r\nTo: <'%s'>\r\nSubject: '%s'\r\nDate: '%s'\r\nMessage-ID: <'%s'>\r\n",
                 sender, recipient.getUsername(), subject, date.toString(), sender);
         String messageBody = "";
-            if (this.message.length() > 998) {
+        if (this.message.length() > 998) {
 
-            }
-            else {
-                messageBody = this.message;
-            }
+        } else {
+            messageBody = this.message;
+        }
 
         return headers + "\r\n" + message + ".\r\n";
 
+    }
+
+    public static int getSize(List<Mail> mails) {
+        int somme = 0;
+        for (Mail mail : mails) {
+            somme += mail.getSize();
+        }
+        return somme;
     }
 
     public int getSize() {
@@ -71,7 +83,9 @@ public class Mail {
         return recipient;
     }
 
-    public Timestamp getDate() { return date; }
+    public Timestamp getDate() {
+        return date;
+    }
 
     @Override
     public boolean equals(Object o) {
