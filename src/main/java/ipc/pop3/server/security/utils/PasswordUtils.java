@@ -7,6 +7,7 @@ import ipc.pop3.server.utils.constants.ApplicationConstants;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.sql.Timestamp;
 import java.util.Random;
 
 public class PasswordUtils {
@@ -14,6 +15,11 @@ public class PasswordUtils {
     private static final int SaltSize = 64;
     private static final Random RANDOM = new SecureRandom();
     private static final ConfigurationProvider configurationProvider = ConfigurationProviderFactory.getConfigurationProvider(ApplicationConstants.ConfigurationProviderMode.CONSTANT);
+
+    public static boolean checkMD5HashedPassword(String usermd5pass, Timestamp timestamp) {
+        //TODO : check pass
+        return false;
+    }
 
     public static String generateUserSalt() {
         byte[] salt = new byte[SaltSize];
