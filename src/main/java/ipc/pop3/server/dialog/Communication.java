@@ -97,12 +97,11 @@ public class Communication implements Runnable {
                         case "TRANSACTION":
                             //TODO
                             //update
-                            out.write("+OK");
 
+                            out.write("+OK");
                             out.flush();
                             return false;
                         default:
-
                             out.write("+OK");
                             out.flush();
                             return false;
@@ -128,7 +127,13 @@ public class Communication implements Runnable {
                 case "RETR":
                     switch (etat) {
                         case "TRANSACTION":
-                            //TODO
+                            int numMessage = Integer.parseInt(head[1]);
+                            String message = mails.get(numMessage).getMessage();
+                            int nombreOctets = mails.get(numMessage).getSize();
+                            out.write("+OK " + mails.size() + " " + nombreOctets);
+                            out.write("<"+message+">");
+                            out.flush();
+
                         default:
                             out.write("-ERR action indisponible à ce stade");
                             out.flush();
