@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
-import java.util.List;
 
 @Service
 public class UserService {
@@ -27,7 +26,7 @@ public class UserService {
         catch (Exception e) {
             throw new InvalidUsernameException("No such user", e); }
 
-        if (currUser.getPassword().equals(PasswordUtils.getHashedPassString(usermd5pass, currUser.getUsersalt()))) {
+        if (PasswordUtils.checkMD5HashedPassword(usermd5pass,currUser.getPassword(), timestamp)) {
             return currUser; }
         else throw new InvalidPasswordException("Password does not match");
     }
@@ -44,8 +43,7 @@ public class UserService {
 
         checkPasswordValidity(userpass);
 
-        String usersalt = PasswordUtils.generateUserSalt();
-        User newUser = new User(username, PasswordUtils.getHashedPassString(userpass, usersalt), usersalt);
+        User newUser = new User(username, userpass, "nosalt");
         return userRepository.save(newUser);
     }
 

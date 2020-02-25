@@ -16,9 +16,13 @@ public class PasswordUtils {
     private static final Random RANDOM = new SecureRandom();
     private static final ConfigurationProvider configurationProvider = ConfigurationProviderFactory.getConfigurationProvider(ApplicationConstants.ConfigurationProviderMode.CONSTANT);
 
-    public static boolean checkMD5HashedPassword(String usermd5pass, Timestamp timestamp) {
-        //TODO : check pass
-        return false;
+    public static boolean checkMD5HashedPassword(String userhashedpass, String userclearpass, Timestamp timestamp) {
+        try {
+            return userhashedpass.equals(new String(MessageDigest.getInstance("MD5").digest((timestamp.getTime() + userclearpass).getBytes())));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public static String generateUserSalt() {

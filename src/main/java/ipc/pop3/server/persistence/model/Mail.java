@@ -1,9 +1,6 @@
 package ipc.pop3.server.persistence.model;
 
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -11,7 +8,7 @@ import java.util.List;
 public class Mail {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy=GenerationType.AUTO)
     private Long id;
     private String subject;
     private String message;
@@ -19,8 +16,9 @@ public class Mail {
     private User recipient;
     private Timestamp date;
 
-    protected Mail() {
-    }
+    private boolean toBeDeleted;
+
+    protected Mail () {}
 
     public Mail(String subject, String message, String sender, User recipient) {
         this.subject = subject;
@@ -40,14 +38,17 @@ public class Mail {
         String headers = String.format(
                 "From: <%s>\r\nTo: <'%s'>\r\nSubject: '%s'\r\nDate: '%s'\r\nMessage-ID: <'%s'>\r\n",
                 sender, recipient.getUsername(), subject, date.toString(), sender);
-        String messageBody = "";
-        if (this.message.length() > 998) {
+        StringBuffer messageBuffer = new StringBuffer();
+        String remainingMessage = this.message;
+            if (this.message.length() > 998) {
+                while (remainingMessage.length() > 998) {
+                    messageBuffer.append(remainingMessage, 0, 998);
+                    remainingMessage = remainingMessage.substring(998);
+                }
+            }
+            messageBuffer.append(remainingMessage);
 
-        } else {
-            messageBody = this.message;
-        }
-
-        return headers + "\r\n" + message + ".\r\n";
+        return headers + "\r\n" + messageBuffer.toString() + ".\r\n";
 
     }
 
@@ -60,7 +61,7 @@ public class Mail {
     }
 
     public int getSize() {
-        return this.toPOP3String().length();
+        return this.toPOP3String().getBytes().length;
     }
 
     public Long getId() {
@@ -83,9 +84,11 @@ public class Mail {
         return recipient;
     }
 
-    public Timestamp getDate() {
-        return date;
-    }
+    public Timestamp getDate() { return date; }
+
+    public boolean isToBeDeleted() { return toBeDeleted; }
+
+    public void setToBeDeleted(boolean toBeDeleted) { this.toBeDeleted = toBeDeleted; }
 
     @Override
     public boolean equals(Object o) {
