@@ -2,6 +2,8 @@ package ipc.pop3.server.utils.constants;
 
 public class ApplicationConstants {
 
+    public static final String POP3_SERVER_NAME = "ipcmail";
+
     public enum ConfigurationProviderMode {
         CONSTANT,
         DATABASE

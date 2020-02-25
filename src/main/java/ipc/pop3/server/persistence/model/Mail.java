@@ -1,6 +1,7 @@
 package ipc.pop3.server.persistence.model;
 
 import javax.persistence.*;
+import java.sql.Timestamp;
 
 @Table(name = "mail")
 public class Mail {
@@ -8,15 +9,16 @@ public class Mail {
     @Id
     @GeneratedValue(strategy=GenerationType.AUTO)
     private Long id;
-    private String object;
+    private String subject;
     private String message;
     private String sender;
     private User recipient;
+    private Timestamp date;
 
     protected Mail () {}
 
-    public Mail (String object, String message, String sender, User recipient) {
-        this.object = object;
+    public Mail (String subject, String message, String sender, User recipient) {
+        this.subject = subject;
         this.message = message;
         this.sender = sender;
         this.recipient = recipient;
@@ -25,8 +27,24 @@ public class Mail {
     @Override
     public String toString() {
         return String.format(
-                "Mail[id=%d, object='%s', message='%s', sender='%s', recipient='%s']",
-                id, object, message, sender, recipient.getUsername());
+                "Mail[id=%d, subject='%s', message='%s', sender='%s', recipient='%s', date='%s']",
+                id, subject, message, sender, recipient.getUsername(), date.toString());
+    }
+
+    public String toPOP3String() {
+        String headers = String.format(
+                "From: <%s>\r\nTo: <'%s'>\r\nSubject: '%s'\r\nDate: '%s'\r\nMessage-ID: <'%s'>\r\n",
+                sender, recipient.getUsername(), subject, date.toString(), sender);
+        String messageBody = "";
+            if (this.message.length() > 998) {
+
+            }
+            else {
+                messageBody = this.message;
+            }
+
+        return headers + "\r\n" + message + ".\r\n";
+
     }
 
     public Long getId() {
@@ -37,8 +55,8 @@ public class Mail {
         return message;
     }
 
-    public String getObject() {
-        return object;
+    public String getSubject() {
+        return subject;
     }
 
     public String getSender() {
@@ -48,6 +66,8 @@ public class Mail {
     public User getRecipient() {
         return recipient;
     }
+
+    public Timestamp getDate() { return date; }
 
     @Override
     public boolean equals(Object o) {
