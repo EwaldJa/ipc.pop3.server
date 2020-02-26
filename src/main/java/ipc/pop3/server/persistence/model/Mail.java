@@ -2,7 +2,6 @@ package ipc.pop3.server.persistence.model;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
-import java.util.List;
 
 @Table(name = "mail")
 public class Mail {
@@ -27,37 +26,34 @@ public class Mail {
         this.recipient = recipient;
     }
 
-    @Override
-    public String toString() {
-        return String.format(
-                "Mail[id=%d, subject='%s', message='%s', sender='%s', recipient='%s', date='%s']",
-                id, subject, message, sender, recipient.getUsername(), date.toString());
+    public Mail(Mail original) {
+        this.subject = new String(original.subject);
+        this.message = new String(original.message);
+        this.sender = new String(original.sender);
+        this.recipient = new User(original.recipient);
+        this.date = new Timestamp(original.date.getTime());
+        this.id = original.id;
+        this.toBeDeleted = original.toBeDeleted;
     }
 
     public String toPOP3String() {
         String headers = String.format(
-                "From: <%s>\r\nTo: <'%s'>\r\nSubject: '%s'\r\nDate: '%s'\r\nMessage-ID: <'%s'>\r\n",
-                sender, recipient.getUsername(), subject, date.toString(), sender);
+                "From: <%s>\r\nTo: <'%s'>\r\nSubject: '%s'\r\nDate: '%s'\r\nMessage-ID: <'%d'@ewaldetlucas.ipc>\r\nToBeDeleted: '%s'\r\n",
+                sender, recipient.getUsername(), subject, date.toString(), id, toBeDeleted);
         StringBuffer messageBuffer = new StringBuffer();
         String remainingMessage = this.message;
             if (this.message.length() > 998) {
                 while (remainingMessage.length() > 998) {
                     messageBuffer.append(remainingMessage, 0, 998);
-                    remainingMessage = remainingMessage.substring(998);
-                }
-            }
+                    remainingMessage = remainingMessage.substring(998); } }
             messageBuffer.append(remainingMessage);
-
         return headers + "\r\n" + messageBuffer.toString() + ".\r\n";
-
     }
 
-    public static int getSize(List<Mail> mails) {
-        int somme = 0;
-        for (Mail mail : mails) {
-            somme += mail.getSize();
-        }
-        return somme;
+    public String toPOP3ListString(int messageNumber) {
+        return String.format(
+                "%d %d",
+                messageNumber, getSize());
     }
 
     public int getSize() {
@@ -88,7 +84,7 @@ public class Mail {
 
     public boolean isToBeDeleted() { return toBeDeleted; }
 
-    public void setToBeDeleted(boolean toBeDeleted) { this.toBeDeleted = toBeDeleted; }
+    public void toBeDeleted(boolean toBeDeleted) { this.toBeDeleted = toBeDeleted; }
 
     @Override
     public boolean equals(Object o) {

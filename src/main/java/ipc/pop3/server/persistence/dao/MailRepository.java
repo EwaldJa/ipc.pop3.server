@@ -10,4 +10,7 @@ public interface MailRepository extends CrudRepository<Mail, Long> {
 
     Mail findById(long id);
     List<Mail> findByRecipient(User recipient);
+
+    @Override
+    void deleteAll(Iterable<? extends Mail> iterable);
 }

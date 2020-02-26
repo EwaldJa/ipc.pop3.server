@@ -3,11 +3,13 @@ package ipc.pop3.server.persistence.service;
 import ipc.pop3.server.persistence.dao.MailRepository;
 import ipc.pop3.server.persistence.model.Mail;
 import ipc.pop3.server.persistence.model.User;
+import ipc.pop3.server.persistence.utils.MailList;
 import ipc.pop3.server.utils.exceptions.EmptyMailException;
 import ipc.pop3.server.utils.exceptions.InvalidSenderException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -16,10 +18,8 @@ public class MailService {
     @Autowired
     private MailRepository mailRepository;
 
-    synchronized public List<Mail> findByUser(User currUser) {
-        List<Mail> mailList = mailRepository.findByRecipient(currUser);
-        //TODO: headers ?
-        return mailList;
+    synchronized public MailList findByUser(User currUser) {
+        return new MailList(mailRepository.findByRecipient(currUser));
     }
 
     synchronized public Mail createMail(String subject, String message, String sender, User recipient) throws EmptyMailException, InvalidSenderException {
@@ -29,8 +29,14 @@ public class MailService {
         if (sender==null || "".equals(sender) || "".equals(sender.replace(" ", ""))) {
             throw new InvalidSenderException("The sender is not valid for this mail : '" + sender + "'.");
         }
-        //TODO: create mail
-        //Mail newMail = new Mail();
-        return null;
+        Mail newMail = new Mail(subject, message, sender, recipient);
+        newMail.toBeDeleted(false);
+        return mailRepository.save(newMail);
+    }
+
+    synchronized public void update(MailList mailList) {
+        ArrayList<Mail> toBeDeletedList = new ArrayList<>();
+        mailList.usageList.forEach(mail->{if(mail.isToBeDeleted()){toBeDeletedList.add(mail);}});
+        mailRepository.deleteAll(toBeDeletedList);
     }
 }

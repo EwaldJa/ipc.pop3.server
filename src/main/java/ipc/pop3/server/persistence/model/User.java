@@ -19,6 +19,12 @@ public class User {
         this.usersalt = usersalt;
     }
 
+    public User (User original) {
+        this.username = new String(original.username);
+        this.password = new String(original.password);
+        this.usersalt = new String(original.usersalt);
+    }
+
     @Override
     public String toString() {
         return String.format(

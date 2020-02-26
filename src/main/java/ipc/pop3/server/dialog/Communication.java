@@ -165,7 +165,7 @@ public class Communication implements Runnable {
 
 
                 default:
-                    out.write("-ERR action inconue");
+                    out.write("-ERR action inconnue");
                     out.flush();
 
             }
