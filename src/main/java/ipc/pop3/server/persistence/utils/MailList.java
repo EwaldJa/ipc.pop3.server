@@ -24,18 +24,26 @@ public class MailList {
         originalList.forEach(mail->usageList.add(new Mail(mail)));
     }
 
-    public int getSize() {
+    public int getOctetSize() {
         int somme = 0;
         for (Mail mail : usageList) { somme += mail.getSize(); }
         return somme;
     }
 
-    public ArrayList<Mail> getList() { return usageList; }
+    public int getMailTotalNumber() {
+        return usageList.size();
+    }
 
-    public String getPOP3ListString() {
+    public ArrayList<Mail> getToBeDeletedList() {
+        ArrayList<Mail> toBeDeletedList = new ArrayList<>();
+        usageList.forEach(mail->{if(mail.isToBeDeleted()){toBeDeletedList.add(mail);}});
+        return toBeDeletedList;
+    }
+
+    public String toPOP3ListString() {
         return String.format(
                 "%d %d",
-                usageList.size(), getSize());
+                getMailTotalNumber(), getOctetSize());
     }
 
     public Mail getMail(int mailNumber) throws NoSuchMessageException, MarkedAsDeletedMessageException, InvalidMailNumberException {

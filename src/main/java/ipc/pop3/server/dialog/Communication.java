@@ -4,8 +4,8 @@ import ipc.pop3.server.persistence.model.Mail;
 import ipc.pop3.server.persistence.model.User;
 import ipc.pop3.server.persistence.service.MailService;
 import ipc.pop3.server.persistence.service.UserService;
-import ipc.pop3.server.utils.exceptions.InvalidPasswordException;
-import ipc.pop3.server.utils.exceptions.InvalidUsernameException;
+import ipc.pop3.server.persistence.utils.MailList;
+import ipc.pop3.server.utils.exceptions.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.io.*;
 import java.net.Socket;
 import java.sql.Timestamp;
-import java.util.List;
 
 public class Communication implements Runnable {
 
@@ -28,7 +27,7 @@ public class Communication implements Runnable {
     private Timestamp timestamp;
     private String etat;
     private User user;
-    List<Mail> mails;
+    MailList mails;
 
     private Socket clt_socket;
     private Logger _log = LoggerFactory.getLogger(Communication.class);
@@ -64,8 +63,7 @@ public class Communication implements Runnable {
                             try {
                                 user = userService.logUser(username, passHashed, timestamp);
                                 mails = mailService.findByUser(user);
-                                int nombreOctets = Mail.getSize(mails);
-                                out.write("+OK maildrop has " + mails.size() + " message (" + nombreOctets + " octets)");
+                                out.write("+OK maildrop has " + mails.getMailTotalNumber() + " message"+((mails.getMailTotalNumber() > 1)?"s ":" ")+"(" + mails.getOctetSize() + " octet"+((mails.getOctetSize() > 1)?"s)":")"));
                                 out.flush();
                             } catch (InvalidUsernameException | InvalidPasswordException e) {
                                 out.write("-ERR permission denied");
@@ -97,7 +95,7 @@ public class Communication implements Runnable {
                         case "TRANSACTION":
                             //TODO
                             //update
-
+                            mailService.update(mails);
                             out.write("+OK");
                             out.flush();
                             return false;
@@ -109,8 +107,7 @@ public class Communication implements Runnable {
                 case "STAT":
                     switch (etat) {
                         case "TRANSACTION":
-                            int nombreOctets = Mail.getSize(mails);
-                            out.write("+OK " + mails.size() + " " + nombreOctets);
+                            out.write("+OK " + mails.toPOP3ListString());
                             out.flush();
                         default:
                             out.write("-ERR action indisponible à ce stade");
@@ -127,12 +124,42 @@ public class Communication implements Runnable {
                 case "RETR":
                     switch (etat) {
                         case "TRANSACTION":
-                            int numMessage = Integer.parseInt(head[1]);
-                            String message = mails.get(numMessage).getMessage();
-                            int nombreOctets = mails.get(numMessage).getSize();
-                            out.write("+OK " + mails.size() + " " + nombreOctets);
-                            out.write("<"+message+">");
-                            out.flush();
+                            boolean errorOccured = false;
+                            int numMessage = 0;
+                            try {
+                                numMessage = Integer.parseInt(head[1]);
+                            }
+                            catch (NumberFormatException e) {
+                                out.write("-ERR impossible to parse message number : '" + head[1] + "'");
+                                out.flush();
+                                errorOccured = true;
+                            }
+                            if (!errorOccured) {
+                                Mail mail = null;
+                                try {
+                                    mail = mails.getMail(numMessage);
+                                    }
+                                catch (NoSuchMessageException e) {
+                                    out.write("-ERR no such message : '" + numMessage + "'");
+                                    out.flush();
+                                    errorOccured = true;
+                                }
+                                catch (MarkedAsDeletedMessageException e) {
+                                    out.write("-ERR message '" + numMessage + "' is marked as deleted");
+                                    out.flush();
+                                    errorOccured = true;
+                                }
+                                catch (InvalidMailNumberException e) {
+                                    out.write("-ERR message number is not valid : '" + numMessage + "'");
+                                    out.flush();
+                                    errorOccured = true;
+                                }
+                                if (!errorOccured) {
+                                    String message = mails.getMail(numMessage).getMessage();
+                                    int nombreOctets = mails.getMail(numMessage).getSize();
+                                    out.write("+OK " + mail.getSize() + " octet"+((mail.getSize() > 1)?"s":""));
+                                    out.write(mail.toPOP3String());
+                                    out.flush(); } }
 
                         default:
                             out.write("-ERR action indisponible à ce stade");

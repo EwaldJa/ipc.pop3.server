@@ -9,9 +9,6 @@ import ipc.pop3.server.utils.exceptions.InvalidSenderException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Service
 public class MailService {
 
@@ -35,8 +32,6 @@ public class MailService {
     }
 
     synchronized public void update(MailList mailList) {
-        ArrayList<Mail> toBeDeletedList = new ArrayList<>();
-        mailList.usageList.forEach(mail->{if(mail.isToBeDeleted()){toBeDeletedList.add(mail);}});
-        mailRepository.deleteAll(toBeDeletedList);
+        mailRepository.deleteAll(mailList.getToBeDeletedList());
     }
 }
