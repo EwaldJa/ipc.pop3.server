@@ -40,7 +40,7 @@ public class MailList {
         return toBeDeletedList;
     }
 
-    public String toPOP3ListString() {
+    public String toPOP3StatString() {
         return String.format(
                 "%d %d",
                 getMailTotalNumber(), getOctetSize());

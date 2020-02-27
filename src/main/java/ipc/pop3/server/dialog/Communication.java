@@ -63,7 +63,7 @@ public class Communication implements Runnable {
                             try {
                                 user = userService.logUser(username, passHashed, timestamp);
                                 mails = mailService.findByUser(user);
-                                out.write("+OK maildrop has " + mails.getMailTotalNumber() + " message"+((mails.getMailTotalNumber() > 1)?"s ":" ")+"(" + mails.getOctetSize() + " octet"+((mails.getOctetSize() > 1)?"s)":")"));
+                                out.write("+OK maildrop has " + mails.getMailTotalNumber() + " message" + ((mails.getMailTotalNumber() > 1) ? "s " : " ") + "(" + mails.getOctetSize() + " octet" + ((mails.getOctetSize() > 1) ? "s)" : ")"));
                                 out.flush();
                             } catch (InvalidUsernameException | InvalidPasswordException e) {
                                 out.write("-ERR permission denied");
@@ -93,8 +93,6 @@ public class Communication implements Runnable {
                 case "QUIT":
                     switch (etat) {
                         case "TRANSACTION":
-                            //TODO
-                            //update
                             mailService.update(mails);
                             out.write("+OK");
                             out.flush();
@@ -107,7 +105,7 @@ public class Communication implements Runnable {
                 case "STAT":
                     switch (etat) {
                         case "TRANSACTION":
-                            out.write("+OK " + mails.toPOP3ListString());
+                            out.write("+OK " + mails.toPOP3StatString());
                             out.flush();
                         default:
                             out.write("-ERR action indisponible à ce stade");
@@ -124,42 +122,24 @@ public class Communication implements Runnable {
                 case "RETR":
                     switch (etat) {
                         case "TRANSACTION":
-                            boolean errorOccured = false;
-                            int numMessage = 0;
                             try {
-                                numMessage = Integer.parseInt(head[1]);
-                            }
-                            catch (NumberFormatException e) {
+                                Mail mail = mails.getMail(Integer.parseInt(head[1]));
+                                out.write("+OK " + mail.getSize() + " octet" + ((mail.getSize() > 1) ? "s" : ""));
+                                out.write(mail.toPOP3String());
+                                out.flush();
+                            } catch (NumberFormatException e) {
                                 out.write("-ERR impossible to parse message number : '" + head[1] + "'");
                                 out.flush();
-                                errorOccured = true;
+                            } catch (NoSuchMessageException e) {
+                                out.write("-ERR no such message : '" + head[1] + "'");
+                                out.flush();
+                            } catch (MarkedAsDeletedMessageException e) {
+                                out.write("-ERR message '" + head[1] + "' is marked as deleted");
+                                out.flush();
+                            } catch (InvalidMailNumberException e) {
+                                out.write("-ERR message number is not valid : '" + head[1] + "'");
+                                out.flush();
                             }
-                            if (!errorOccured) {
-                                Mail mail = null;
-                                try {
-                                    mail = mails.getMail(numMessage);
-                                    }
-                                catch (NoSuchMessageException e) {
-                                    out.write("-ERR no such message : '" + numMessage + "'");
-                                    out.flush();
-                                    errorOccured = true;
-                                }
-                                catch (MarkedAsDeletedMessageException e) {
-                                    out.write("-ERR message '" + numMessage + "' is marked as deleted");
-                                    out.flush();
-                                    errorOccured = true;
-                                }
-                                catch (InvalidMailNumberException e) {
-                                    out.write("-ERR message number is not valid : '" + numMessage + "'");
-                                    out.flush();
-                                    errorOccured = true;
-                                }
-                                if (!errorOccured) {
-                                    String message = mails.getMail(numMessage).getMessage();
-                                    int nombreOctets = mails.getMail(numMessage).getSize();
-                                    out.write("+OK " + mail.getSize() + " octet"+((mail.getSize() > 1)?"s":""));
-                                    out.write(mail.toPOP3String());
-                                    out.flush(); } }
 
                         default:
                             out.write("-ERR action indisponible à ce stade");
