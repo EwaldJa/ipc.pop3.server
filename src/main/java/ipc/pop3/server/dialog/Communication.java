@@ -46,7 +46,6 @@ public class Communication implements Runnable {
 
 
     private boolean recevoir() {
-        boolean closeConnection = false;
         int requestreturn = 0;
         try {
             String line = in.readLine();
@@ -54,7 +53,7 @@ public class Communication implements Runnable {
             String[] head = line.split(" ");
             String request = head[0];
             switch (request) {
-                //TO DO
+                //TODO
                 case "APOP":
                     switch (etat) {
                         case "AUTH":
@@ -69,26 +68,38 @@ public class Communication implements Runnable {
                                 out.write("-ERR permission denied");
                                 out.flush();
                             }
+                            //TODO: etat
+                            return false;
 
                         default:
                             out.write("-ERR action indisponible à ce stade");
                             out.flush();
+                            //TODO: etat
+                            return false;
                     }
                 case "USER":
                     switch (etat) {
                         case "AUTH":
                             //TODO un jour
+                            //TODO: etat
+                            return false;
                         default:
                             out.write("-ERR action indisponible à ce stade");
                             out.flush();
+                            //TODO: etat
+                            return false;
                     }
                 case "PASS":
                     switch (etat) {
                         case "WAIT PASS":
                             //TODO un jour
+                            //TODO: etat
+                            return false;
                         default:
                             out.write("-ERR action indisponible à ce stade");
                             out.flush();
+                            //TODO: etat
+                            return false;
                     }
                 case "QUIT":
                     switch (etat) {
@@ -96,28 +107,38 @@ public class Communication implements Runnable {
                             mailService.update(mails);
                             out.write("+OK");
                             out.flush();
-                            return false;
+                            //TODO: etat
+                            return true;
                         default:
                             out.write("+OK");
                             out.flush();
-                            return false;
+                            //TODO: etat
+                            return true;
                     }
                 case "STAT":
                     switch (etat) {
                         case "TRANSACTION":
                             out.write("+OK " + mails.toPOP3StatString());
                             out.flush();
+                            //TODO: etat
+                            return false;
                         default:
                             out.write("-ERR action indisponible à ce stade");
                             out.flush();
+                            //TODO: etat
+                            return false;
                     }
                 case "LIST":
                     switch (etat) {
                         case "TRANSACTION":
                             //TODO un jour
+                            //TODO: etat
+                            return false;
                         default:
                             out.write("-ERR action indisponible à ce stade");
                             out.flush();
+                            //TODO: etat
+                            return false;
                     }
                 case "RETR":
                     switch (etat) {
@@ -140,143 +161,74 @@ public class Communication implements Runnable {
                                 out.write("-ERR message number is not valid : '" + head[1] + "'");
                                 out.flush();
                             }
+                            //TODO: etat
+                            return false;
 
                         default:
                             out.write("-ERR action indisponible à ce stade");
                             out.flush();
+                            //TODO: etat
+                            return false;
                     }
                 case "NOOP":
                     switch (etat) {
                         case "TRANSACTION":
                             //TODO un jour
+                            //TODO: etat
+                            return false;
                         default:
                             out.write("-ERR action indisponible à ce stade");
                             out.flush();
+                            //TODO: etat
+                            return false;
                     }
                 case "DELE":
                     switch (etat) {
                         case "TRANSACTION":
                             //TODO un jour
+                            //TODO: etat
+                            return false;
                         default:
                             out.write("-ERR action indisponible à ce stade");
                             out.flush();
+                            //TODO: etat
+                            return false;
                     }
                 case "RSET":
                     switch (etat) {
                         case "TRANSACTION":
                             //TODO un jour
+                            //TODO: etat
+                            return false;
                         default:
                             out.write("-ERR action indisponible à ce stade");
                             out.flush();
+                            //TODO: etat
+                            return false;
                     }
 
 
                 default:
                     out.write("-ERR action inconnue");
                     out.flush();
+                    //TODO: etat
+                    return false;
 
             }
 
 
-            String filename = "";
-            for (int i = 1; i < head.length - 2; i++) {
-                filename += head[i] + " ";
-                System.out.println(filename);
-            }
-            filename += head[head.length - 2];
-            if (filename.charAt(0) == '/') {
-                filename = filename.substring(1);
-            }
-            String httpVersion = head[head.length - 1];
-
-            _log.debug("Requête reçue : " + line + " , requete " + request + ", fichier " + filename + ", http " + httpVersion);
-
-            if (!httpVersion.equals("HTTP/1.1")) {
-                sendError(505);
-                return true;
-            }
-
-            int length = 0;
-            boolean headerskipped = false;
-            while (!headerskipped) {
-                line = in.readLine();
-                if (line.equals("")) {
-                    headerskipped = true;
-                    break;
-                }
-                String[] field = line.split(" ");
-                _log.debug("field complet : " + line + " , champ : " + field[0]);
-                _log.debug("valeur : " + field[1]);
-                if (field[0].equals("Connection:")) {
-                    closeConnection = (field[1].toLowerCase().equals("close"));
-                    if (closeConnection && request.equals("END") && filename.equals("nothing")) {
-                        return false;
-                    }
-                }
-                if (field[0].equals("Content-Length:")) {
-                    length = Integer.parseInt(field[1]);
-                }
-                _log.debug("headerskipped:" + headerskipped);
-            }
-            _log.debug("Header passé");
-            switch (request) {
-                case "GET":
-                    _log.debug("Appel à sendFile");
-                    requestreturn = GestionHttpServer.sendFile(bos, filename);
-                    _log.debug("sendFile réalisé, retour : " + requestreturn);
-                    break;
-                case "PUT":
-                    _log.debug("Appel à writeFile");
-                    requestreturn = GestionHttpServer.writeFile(bis, filename, length);
-                    _log.debug("writeFile réalisé, retour : " + requestreturn);
-                    break;
-                default:
-                    requestreturn = 400;
-                    break;
-            }
 
         } catch (IOException e) {
             _log.error("Erreur lors de la réception");
             _log.error(e.getMessage());
-            requestreturn = 500;
+            //TODO: etat
+            return false;
         } catch (NullPointerException e) {
             _log.info("Erreur NullPointer à la réception : requete vide");
             _log.debug(e.getMessage());
-            requestreturn = 500;
-        } finally {
-            if (requestreturn != 0) {
-                sendError(requestreturn);
-                closeConnection = true;
-            }
-            return closeConnection;
+            //TODO: etat
+            return false;
         }
-    }
-
-    private void sendError(int error_code) {
-        String error_name;
-        switch (error_code) {
-            case 400:
-                error_name = "Bad Request";
-                break;
-            case 404:
-                error_name = "Not Found";
-                break;
-            case 500:
-                error_name = "Internal Server Error";
-                break;
-            case 505:
-                error_name = "HTTP Version not supported";
-                break;
-            default:
-                error_code = 500;
-                error_name = "Internal Server Error";
-                break;
-        }
-        _log.debug("Appel à sendError : " + error_code + ":" + error_name);
-        String request = "HTTP/1.1 " + error_code + " " + error_name + "\r\n";
-        String connection = "Connection: close\r\n";
-        out.write(request + connection);
-        out.flush();
     }
 
     @Override
