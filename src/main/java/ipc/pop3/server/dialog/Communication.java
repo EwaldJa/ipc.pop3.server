@@ -25,7 +25,7 @@ public class Communication implements Runnable {
     private MailService mailService;
 
     private Timestamp timestamp;
-    private String etat;
+    private States etat;
     private User user;
     MailList mails;
 
@@ -33,30 +33,58 @@ public class Communication implements Runnable {
     private Logger _log = LoggerFactory.getLogger(Communication.class);
     private BufferedReader in;
     private PrintWriter out;
-    private BufferedOutputStream bos;
-    private BufferedInputStream bis;
+
+    private int attempts;
+
+    public static enum States {
+        TRANSACTION,
+        AUTHORIZATION,
+        WAITING_PASS;
+    }
+
+    public static enum Commands {
+        APOP("APOP"),
+        USER("USER"),
+        PASS("PASS"),
+        QUIT("QUIT"),
+        STAT("STAT"),
+        LIST("LIST"),
+        RETR("RETR"),
+        NOOP("NOOP"),
+        DELE("DELE"),
+        RSET("RSET");
+        private String val;
+
+        Commands(String cmd) {
+            this.val = cmd;
+        }
+
+        public String val() {
+            return val;
+        }
+    }
 
     public Communication(Socket socket) throws IOException {
         CommID++;
         clt_socket = socket;
-        bos = new BufferedOutputStream(clt_socket.getOutputStream());
-        bis = new BufferedInputStream(clt_socket.getInputStream());
-
+        attempts = 0;
     }
 
-
+    /**
+     * @return a boolean, <b>true</b> when QUIT command issued, <b>false</b> if not finished
+     */
     private boolean recevoir() {
         int requestreturn = 0;
         try {
             String line = in.readLine();
 
             String[] head = line.split(" ");
-            String request = head[0];
+            Commands request = Commands.valueOf(head[0]);
             switch (request) {
                 //TODO
-                case "APOP":
+                case APOP:
                     switch (etat) {
-                        case "AUTH":
+                        case AUTHORIZATION:
                             String username = head[1];
                             String passHashed = head[2];
                             try {
@@ -64,9 +92,16 @@ public class Communication implements Runnable {
                                 mails = mailService.findByUser(user);
                                 out.write("+OK maildrop has " + mails.getMailTotalNumber() + " message" + ((mails.getMailTotalNumber() > 1) ? "s " : " ") + "(" + mails.getOctetSize() + " octet" + ((mails.getOctetSize() > 1) ? "s)" : ")"));
                                 out.flush();
+                                etat = States.TRANSACTION;
                             } catch (InvalidUsernameException | InvalidPasswordException e) {
-                                out.write("-ERR permission denied");
-                                out.flush();
+                                attempts++;
+                                if (attempts >= 3) {
+                                    out.write("-ERR too many attempts");
+                                    out.flush();
+                                    return true; }
+                                else {
+                                    out.write("-ERR permission denied");
+                                    out.flush(); }
                             }
                             //TODO: etat
                             return false;
@@ -77,11 +112,13 @@ public class Communication implements Runnable {
                             //TODO: etat
                             return false;
                     }
-                case "USER":
+                case USER:
                     switch (etat) {
-                        case "AUTH":
+                        case AUTHORIZATION:
                             //TODO un jour
-                            //TODO: etat
+                            //TODO: etat = "WAIT PASS"
+                            out.write("-ERR action non implémentée");
+                            out.flush();
                             return false;
                         default:
                             out.write("-ERR action indisponible à ce stade");
@@ -89,11 +126,13 @@ public class Communication implements Runnable {
                             //TODO: etat
                             return false;
                     }
-                case "PASS":
+                case PASS:
                     switch (etat) {
-                        case "WAIT PASS":
+                        case WAITING_PASS:
                             //TODO un jour
                             //TODO: etat
+                            out.write("-ERR action non implémentée");
+                            out.flush();
                             return false;
                         default:
                             out.write("-ERR action indisponible à ce stade");
@@ -101,9 +140,9 @@ public class Communication implements Runnable {
                             //TODO: etat
                             return false;
                     }
-                case "QUIT":
+                case QUIT:
                     switch (etat) {
-                        case "TRANSACTION":
+                        case TRANSACTION:
                             mailService.update(mails);
                             out.write("+OK");
                             out.flush();
@@ -115,9 +154,9 @@ public class Communication implements Runnable {
                             //TODO: etat
                             return true;
                     }
-                case "STAT":
+                case STAT:
                     switch (etat) {
-                        case "TRANSACTION":
+                        case TRANSACTION:
                             out.write("+OK " + mails.toPOP3StatString());
                             out.flush();
                             //TODO: etat
@@ -128,9 +167,11 @@ public class Communication implements Runnable {
                             //TODO: etat
                             return false;
                     }
-                case "LIST":
+                case LIST:
                     switch (etat) {
-                        case "TRANSACTION":
+                        case TRANSACTION:
+                            out.write("-ERR action non implémentée");
+                            out.flush();
                             //TODO un jour
                             //TODO: etat
                             return false;
@@ -140,9 +181,9 @@ public class Communication implements Runnable {
                             //TODO: etat
                             return false;
                     }
-                case "RETR":
+                case RETR:
                     switch (etat) {
-                        case "TRANSACTION":
+                        case TRANSACTION:
                             try {
                                 Mail mail = mails.getMail(Integer.parseInt(head[1]));
                                 out.write("+OK " + mail.getSize() + " octet" + ((mail.getSize() > 1) ? "s" : ""));
@@ -170,9 +211,11 @@ public class Communication implements Runnable {
                             //TODO: etat
                             return false;
                     }
-                case "NOOP":
+                case NOOP:
                     switch (etat) {
-                        case "TRANSACTION":
+                        case TRANSACTION:
+                            out.write("-ERR action non implémentée");
+                            out.flush();
                             //TODO un jour
                             //TODO: etat
                             return false;
@@ -182,9 +225,11 @@ public class Communication implements Runnable {
                             //TODO: etat
                             return false;
                     }
-                case "DELE":
+                case DELE:
                     switch (etat) {
-                        case "TRANSACTION":
+                        case TRANSACTION:
+                            out.write("-ERR action non implémentée");
+                            out.flush();
                             //TODO un jour
                             //TODO: etat
                             return false;
@@ -194,9 +239,11 @@ public class Communication implements Runnable {
                             //TODO: etat
                             return false;
                     }
-                case "RSET":
+                case RSET:
                     switch (etat) {
-                        case "TRANSACTION":
+                        case TRANSACTION:
+                            out.write("-ERR action non implémentée");
+                            out.flush();
                             //TODO un jour
                             //TODO: etat
                             return false;
@@ -218,6 +265,11 @@ public class Communication implements Runnable {
 
 
 
+        } catch (IllegalArgumentException e) {
+            out.write("-ERR action inconnue");
+            out.flush();
+            //TODO: etat
+            return false;
         } catch (IOException e) {
             _log.error("Erreur lors de la réception");
             _log.error(e.getMessage());
@@ -248,7 +300,7 @@ public class Communication implements Runnable {
         timestamp = new Timestamp(System.currentTimeMillis());
         out.write("+OK Server ready <" + timestamp + "@EwaldEtLucas.ipc>");
         out.flush();
-        etat = "authorisation";
+        etat = States.AUTHORIZATION;
         while (!recevoir()) {/*Reçoit et répond au client*/}
         _log.debug("Fermeture de la communication" + CommID);
         try {
