@@ -84,9 +84,9 @@ public class Communication implements Runnable {
                 case APOP:
                     switch (etat) {
                         case AUTHORIZATION:
-                            String username = head[1];
-                            String passHashed = head[2];
                             try {
+                                String username = head[1];
+                                String passHashed = head[2];
                                 user = userService.logUser(username, passHashed, timestamp);
                                 mails = mailService.findByUser(user);
                                 out.write("+OK maildrop has " + mails.getMailTotalNumber() + " message" + ((mails.getMailTotalNumber() > 1) ? "s " : " ") + "(" + mails.getOctetSize() + " octet" + ((mails.getOctetSize() > 1) ? "s)" : ")"));
@@ -101,6 +101,16 @@ public class Communication implements Runnable {
                                 else {
                                     out.write("-ERR permission denied");
                                     out.flush(); }
+                            } catch (ArrayIndexOutOfBoundsException e) {
+                                attempts++;
+                                if (attempts >= 3) {
+                                    out.write("-ERR too many attempts");
+                                    out.flush();
+                                    return true;
+                                } else {
+                                    out.write("-ERR no digest provided");
+                                    out.flush();
+                                }
                             }
                             //TODO: etat
                             return false;
