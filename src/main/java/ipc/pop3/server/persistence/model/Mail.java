@@ -13,6 +13,8 @@ public class Mail {
     private String subject;
     private String message;
     private String sender;
+    @ManyToOne
+    @JoinColumn
     private User recipient;
     private Timestamp date;
 
