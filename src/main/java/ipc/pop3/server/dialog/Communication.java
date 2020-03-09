@@ -27,7 +27,7 @@ public class Communication implements Runnable {
     private Timestamp timestamp;
     private States etat;
     private User user;
-    MailList mails;
+    private MailList mails;
 
     private Socket clt_socket;
     private Logger _log = LoggerFactory.getLogger(Communication.class);
@@ -64,17 +64,16 @@ public class Communication implements Runnable {
         }
     }
 
-    public Communication(Socket socket) throws IOException {
+    public Communication(Socket socket) {
         CommID++;
         clt_socket = socket;
         attempts = 0;
     }
 
     /**
-     * @return a boolean, <b>true</b> when QUIT command issued, <b>false</b> if not finished
+     * @return a boolean, <b>true</b> when QUIT command issued, or when an error during login failed <b>false</b> if not finished
      */
     private boolean recevoir() {
-        int requestreturn = 0;
         try {
             String line = in.readLine();
 
@@ -214,38 +213,46 @@ public class Communication implements Runnable {
                 case NOOP:
                     switch (etat) {
                         case TRANSACTION:
-                            out.write("-ERR action non implémentée");
+                            out.write("+OK");
                             out.flush();
-                            //TODO un jour
-                            //TODO: etat
                             return false;
                         default:
                             out.write("-ERR action indisponible à ce stade");
                             out.flush();
-                            //TODO: etat
                             return false;
                     }
                 case DELE:
                     switch (etat) {
                         case TRANSACTION:
-                            out.write("-ERR action non implémentée");
-                            out.flush();
-                            //TODO un jour
-                            //TODO: etat
+                            try {
+                                mails.deleteMail(Integer.parseInt(head[1]));
+                                out.write("+OK message '" + head[1] + "' deleted");
+                                out.flush();
+                            } catch (NumberFormatException e) {
+                                out.write("-ERR impossible to parse message number : '" + head[1] + "'");
+                                out.flush();
+                            } catch (NoSuchMessageException e) {
+                                out.write("-ERR no such message : '" + head[1] + "'");
+                                out.flush();
+                            } catch (MarkedAsDeletedMessageException e) {
+                                out.write("-ERR message '" + head[1] + "' already deleted");
+                                out.flush();
+                            } catch (InvalidMailNumberException e) {
+                                out.write("-ERR message number is not valid : '" + head[1] + "'");
+                                out.flush();
+                            }
                             return false;
                         default:
                             out.write("-ERR action indisponible à ce stade");
                             out.flush();
-                            //TODO: etat
                             return false;
                     }
                 case RSET:
                     switch (etat) {
                         case TRANSACTION:
-                            out.write("-ERR action non implémentée");
+                            mails.reset();
+                            out.write("+OK maildrop has " + mails.getMailTotalNumber() + " message" + ((mails.getMailTotalNumber() > 1) ? "s " : " ") + "(" + mails.getOctetSize() + " octet" + ((mails.getOctetSize() > 1) ? "s)" : ")"));
                             out.flush();
-                            //TODO un jour
-                            //TODO: etat
                             return false;
                         default:
                             out.write("-ERR action indisponible à ce stade");

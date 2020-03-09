@@ -52,4 +52,8 @@ public class MailList {
         if (usageList.get(mailNumber).isToBeDeleted()) { throw new MarkedAsDeletedMessageException("Message marked as deleted."); }
         return usageList.get(mailNumber);
     }
+
+    public void deleteMail(int mailNumber) throws InvalidMailNumberException, MarkedAsDeletedMessageException, NoSuchMessageException {
+        getMail(mailNumber).toBeDeleted(true);
+    }
 }
