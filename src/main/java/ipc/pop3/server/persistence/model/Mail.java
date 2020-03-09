@@ -3,6 +3,7 @@ package ipc.pop3.server.persistence.model;
 import javax.persistence.*;
 import java.sql.Timestamp;
 
+@Entity
 @Table(name = "mail")
 public class Mail {
 

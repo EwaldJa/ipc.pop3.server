@@ -31,7 +31,7 @@ public class Server implements Runnable {
             try {
                 new Thread(new Communication(recevoirConnection())).start();
                 System.out.println("La connection a été établie");
-            } catch (IOException e) {
+            } catch (Exception e) {
                 System.out.println("Impossible d'établir la connection : ");
                 System.out.println(e.getMessage());
             }
