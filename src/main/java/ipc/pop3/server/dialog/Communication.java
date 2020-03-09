@@ -5,6 +5,7 @@ import ipc.pop3.server.persistence.model.User;
 import ipc.pop3.server.persistence.service.MailService;
 import ipc.pop3.server.persistence.service.UserService;
 import ipc.pop3.server.persistence.utils.MailList;
+import ipc.pop3.server.utils.bean.SpringUtils;
 import ipc.pop3.server.utils.exceptions.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +19,7 @@ public class Communication implements Runnable {
 
     private static int CommID;
 
-    @Autowired
     private UserService userService;
-
-    @Autowired
     private MailService mailService;
 
     private Timestamp timestamp;
@@ -68,6 +66,8 @@ public class Communication implements Runnable {
         CommID++;
         clt_socket = socket;
         attempts = 0;
+        userService = SpringUtils.getBean(UserService.class);
+        mailService = SpringUtils.getBean(MailService.class);
     }
 
     /**
@@ -111,8 +111,10 @@ public class Communication implements Runnable {
                                     out.write("-ERR no digest provided");
                                     out.flush();
                                 }
+                            } catch (InterruptedOperationException e) {
+                                out.write("-ERR " + e.getMessage());
+                                out.flush();
                             }
-                            //TODO: etat
                             return false;
 
                         default:
@@ -292,12 +294,12 @@ public class Communication implements Runnable {
             _log.error(e.getMessage());
             //TODO: etat
             return false;
-        } catch (NullPointerException e) {
+        } /*catch (NullPointerException e) {
             _log.info("Erreur NullPointer à la réception : requete vide");
             _log.debug(e.getMessage());
             //TODO: etat
             return false;
-        }
+        }*/
     }
 
     @Override

@@ -4,6 +4,7 @@ import ipc.pop3.server.persistence.dao.UserRepository;
 import ipc.pop3.server.persistence.model.User;
 import ipc.pop3.server.security.utils.PasswordUtils;
 import ipc.pop3.server.utils.constants.ApplicationConstants;
+import ipc.pop3.server.utils.exceptions.InterruptedOperationException;
 import ipc.pop3.server.utils.exceptions.InvalidPasswordException;
 import ipc.pop3.server.utils.exceptions.InvalidUsernameException;
 import ipc.pop3.server.utils.exceptions.UserAlreadyExistingException;
@@ -19,13 +20,14 @@ public class UserService {
     private UserRepository userRepository;
 
 
-    synchronized public User logUser(String username, String usermd5pass, Timestamp timestamp) throws InvalidUsernameException, InvalidPasswordException {
+    synchronized public User logUser(String username, String usermd5pass, Timestamp timestamp) throws InvalidUsernameException, InvalidPasswordException, InterruptedOperationException {
         User currUser;
         try {
             currUser = userRepository.findByUsername(username); }
         catch (Exception e) {
-            throw new InvalidUsernameException("No such user", e); }
-
+            throw new InterruptedOperationException("Error while trying to find user", e); }
+        if (currUser == null) {
+            throw new InvalidUsernameException("No such user"); }
         if (PasswordUtils.checkMD5HashedPassword(usermd5pass,currUser.getPassword(), timestamp)) {
             return currUser; }
         else throw new InvalidPasswordException("Password does not match");
