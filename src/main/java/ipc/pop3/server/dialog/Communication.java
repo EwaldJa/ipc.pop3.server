@@ -87,40 +87,36 @@ public class Communication implements Runnable {
                                 String passHashed = head[2];
                                 user = userService.logUser(username, passHashed, timestamp);
                                 mails = mailService.findByUser(user);
-                                out.write("+OK maildrop has " + mails.getMailTotalNumber() + " message" + ((mails.getMailTotalNumber() > 1) ? "s " : " ") + "(" + mails.getOctetSize() + " octet" + ((mails.getOctetSize() > 1) ? "s)" : ")"));
+                                out.write("+OK maildrop has " + mails.getMailTotalNumber() + " message" + ((mails.getMailTotalNumber() > 1) ? "s " : " ") + "(" + mails.getOctetSize() + " octet" + ((mails.getOctetSize() > 1) ? "s)" : ")") + "\r\n");
                                 out.flush();
                                 etat = States.TRANSACTION;
-                                return false;
                             } catch (InvalidUsernameException | InvalidPasswordException e) {
                                 attempts++;
                                 if (attempts >= 3) {
-                                    out.write("-ERR too many attempts");
+                                    out.write("-ERR too many attempts" + "\r\n");
                                     out.flush();
                                     return true; }
                                 else {
-                                    out.write("-ERR permission denied");
-                                    out.flush();
-                                    return false; }
+                                    out.write("-ERR permission denied" + "\r\n");
+                                    out.flush(); }
                             } catch (ArrayIndexOutOfBoundsException e) {
                                 attempts++;
                                 if (attempts >= 3) {
-                                    out.write("-ERR too many attempts");
+                                    out.write("-ERR too many attempts" + "\r\n");
                                     out.flush();
-                                    return true;
-                                } else {
-                                    out.write("-ERR no digest provided");
-                                    out.flush();
-                                    return false; }
+                                    return true; }
+                                else {
+                                    out.write("-ERR no digest provided" + "\r\n");
+                                    out.flush(); }
                             } catch (InterruptedOperationException e) {
-                                out.write("-ERR " + e.getMessage());
+                                out.write("-ERR " + e.getMessage() + "\r\n");
                                 out.flush();
-                                return false;
                             }
+                            return false;
 
                         default:
-                            out.write("-ERR action indisponible à ce stade");
+                            out.write("-ERR action indisponible à ce stade" + "\r\n");
                             out.flush();
-                            //TODO: etat
                             return false;
                     }
                 case USER:
@@ -128,11 +124,11 @@ public class Communication implements Runnable {
                         case AUTHORIZATION:
                             //TODO un jour
                             //TODO: etat = "WAIT PASS"
-                            out.write("-ERR action non implémentée");
+                            out.write("-ERR action non implémentée" + "\r\n");
                             out.flush();
                             return false;
                         default:
-                            out.write("-ERR action indisponible à ce stade");
+                            out.write("-ERR action indisponible à ce stade" + "\r\n");
                             out.flush();
                             //TODO: etat
                             return false;
@@ -142,27 +138,24 @@ public class Communication implements Runnable {
                         case WAITING_PASS:
                             //TODO un jour
                             //TODO: etat
-                            out.write("-ERR action non implémentée");
+                            out.write("-ERR action non implémentée" + "\r\n");
                             out.flush();
                             return false;
                         default:
-                            out.write("-ERR action indisponible à ce stade");
+                            out.write("-ERR action indisponible à ce stade" + "\r\n");
                             out.flush();
-                            //TODO: etat
                             return false;
                     }
                 case QUIT:
                     switch (etat) {
                         case TRANSACTION:
                             mailService.update(mails);
-                            out.write("+OK");
+                            out.write("+OK" + "\r\n");
                             out.flush();
-                            //TODO: etat
                             return true;
                         default:
-                            out.write("+OK");
+                            out.write("-ERR action indisponible à ce stade" + "\r\n");
                             out.flush();
-                            //TODO: etat
                             return true;
                     }
                 case STAT:
@@ -170,26 +163,46 @@ public class Communication implements Runnable {
                         case TRANSACTION:
                             out.write("+OK " + mails.toPOP3StatString());
                             out.flush();
-                            //TODO: etat
                             return false;
                         default:
-                            out.write("-ERR action indisponible à ce stade");
+                            out.write("-ERR action indisponible à ce stade" + "\r\n");
                             out.flush();
-                            //TODO: etat
                             return false;
                     }
                 case LIST:
                     switch (etat) {
                         case TRANSACTION:
-                            out.write("-ERR action non implémentée");
-                            out.flush();
-                            //TODO un jour
-                            //TODO: etat
+                            if (head.length == 2) {
+                                try {
+                                    out.write("+OK " + mails.getMail(Integer.parseInt(head[1])).toPOP3ListString(Integer.parseInt(head[1])));
+                                    out.flush(); }
+                                catch (NumberFormatException e) {
+                                    out.write("-ERR impossible to parse message number : '" + head[1] + "'" + "\r\n");
+                                    out.flush();
+                                } catch (NoSuchMessageException e) {
+                                    out.write("-ERR no such message : '" + head[1] + "'" + "\r\n");
+                                    out.flush();
+                                } catch (MarkedAsDeletedMessageException e) {
+                                    out.write("-ERR message '" + head[1] + "' is marked as deleted" + "\r\n");
+                                    out.flush();
+                                } catch (InvalidMailNumberException e) {
+                                    out.write("-ERR message number is not valid : '" + head[1] + "'" + "\r\n");
+                                    out.flush();
+                                }
+                            }
+                            else {
+                                out.write("+OK " + mails.toPOP3ListString());
+                                for (int i = 1; i <= mails.getMailTotalNumber(); i++) {
+                                    try {
+                                        out.write(mails.getMail(i).toPOP3ListString(i)); }
+                                    catch (NoSuchMessageException | MarkedAsDeletedMessageException | InvalidMailNumberException e) { e.printStackTrace(); }
+                                }
+                                out.flush();}
+
                             return false;
                         default:
-                            out.write("-ERR action indisponible à ce stade");
+                            out.write("-ERR action indisponible à ce stade" + "\r\n");
                             out.flush();
-                            //TODO: etat
                             return false;
                     }
                 case RETR:
@@ -197,39 +210,37 @@ public class Communication implements Runnable {
                         case TRANSACTION:
                             try {
                                 Mail mail = mails.getMail(Integer.parseInt(head[1]));
-                                out.write("+OK " + mail.getSize() + " octet" + ((mail.getSize() > 1) ? "s" : ""));
+                                out.write("+OK " + mail.getSize() + " octet" + ((mail.getSize() > 1) ? "s" : "") + "\r\n");
                                 out.write(mail.toPOP3String());
                                 out.flush();
                             } catch (NumberFormatException e) {
-                                out.write("-ERR impossible to parse message number : '" + head[1] + "'");
+                                out.write("-ERR impossible to parse message number : '" + head[1] + "'" + "\r\n");
                                 out.flush();
                             } catch (NoSuchMessageException e) {
-                                out.write("-ERR no such message : '" + head[1] + "'");
+                                out.write("-ERR no such message : '" + head[1] + "'" + "\r\n");
                                 out.flush();
                             } catch (MarkedAsDeletedMessageException e) {
-                                out.write("-ERR message '" + head[1] + "' is marked as deleted");
+                                out.write("-ERR message '" + head[1] + "' is marked as deleted" + "\r\n");
                                 out.flush();
                             } catch (InvalidMailNumberException e) {
-                                out.write("-ERR message number is not valid : '" + head[1] + "'");
+                                out.write("-ERR message number is not valid : '" + head[1] + "'" + "\r\n");
                                 out.flush();
                             }
-                            //TODO: etat
                             return false;
 
                         default:
-                            out.write("-ERR action indisponible à ce stade");
+                            out.write("-ERR action indisponible à ce stade" + "\r\n");
                             out.flush();
-                            //TODO: etat
                             return false;
                     }
                 case NOOP:
                     switch (etat) {
                         case TRANSACTION:
-                            out.write("+OK");
+                            out.write("+OK" + "\r\n");
                             out.flush();
                             return false;
                         default:
-                            out.write("-ERR action indisponible à ce stade");
+                            out.write("-ERR action indisponible à ce stade" + "\r\n");
                             out.flush();
                             return false;
                     }
@@ -238,24 +249,24 @@ public class Communication implements Runnable {
                         case TRANSACTION:
                             try {
                                 mails.deleteMail(Integer.parseInt(head[1]));
-                                out.write("+OK message '" + head[1] + "' deleted");
+                                out.write("+OK message '" + head[1] + "' deleted" + "\r\n");
                                 out.flush();
                             } catch (NumberFormatException e) {
-                                out.write("-ERR impossible to parse message number : '" + head[1] + "'");
+                                out.write("-ERR impossible to parse message number : '" + head[1] + "'" + "\r\n");
                                 out.flush();
                             } catch (NoSuchMessageException e) {
-                                out.write("-ERR no such message : '" + head[1] + "'");
+                                out.write("-ERR no such message : '" + head[1] + "'" + "\r\n");
                                 out.flush();
                             } catch (MarkedAsDeletedMessageException e) {
-                                out.write("-ERR message '" + head[1] + "' already deleted");
+                                out.write("-ERR message '" + head[1] + "' already deleted" + "\r\n");
                                 out.flush();
                             } catch (InvalidMailNumberException e) {
-                                out.write("-ERR message number is not valid : '" + head[1] + "'");
+                                out.write("-ERR message number is not valid : '" + head[1] + "'" + "\r\n");
                                 out.flush();
                             }
                             return false;
                         default:
-                            out.write("-ERR action indisponible à ce stade");
+                            out.write("-ERR action indisponible à ce stade" + "\r\n");
                             out.flush();
                             return false;
                     }
@@ -263,21 +274,19 @@ public class Communication implements Runnable {
                     switch (etat) {
                         case TRANSACTION:
                             mails.reset();
-                            out.write("+OK maildrop has " + mails.getMailTotalNumber() + " message" + ((mails.getMailTotalNumber() > 1) ? "s " : " ") + "(" + mails.getOctetSize() + " octet" + ((mails.getOctetSize() > 1) ? "s)" : ")"));
+                            out.write("+OK maildrop has " + mails.getMailTotalNumber() + " message" + ((mails.getMailTotalNumber() > 1) ? "s " : " ") + "(" + mails.getOctetSize() + " octet" + ((mails.getOctetSize() > 1) ? "s)" : ")") + "\r\n");
                             out.flush();
                             return false;
                         default:
-                            out.write("-ERR action indisponible à ce stade");
+                            out.write("-ERR action indisponible à ce stade" + "\r\n");
                             out.flush();
-                            //TODO: etat
                             return false;
                     }
 
 
                 default:
-                    out.write("-ERR action inconnue");
+                    out.write("-ERR action inconnue" + "\r\n");
                     out.flush();
-                    //TODO: etat
                     return false;
 
             }
@@ -286,21 +295,18 @@ public class Communication implements Runnable {
 
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
-            out.write("-ERR action inconnue");
+            out.write("-ERR action inconnue" + "\r\n");
             out.flush();
-            //TODO: etat
             return false;
         } catch (IOException e) {
-            _log.error("Erreur lors de la réception");
+            _log.error("Erreur lors de la réception" + "\r\n");
             _log.error(e.getMessage());
-            //TODO: etat
             return false;
-        } /*catch (NullPointerException e) {
-            _log.info("Erreur NullPointer à la réception : requete vide");
+        } catch (NullPointerException e) {
+            _log.info("Erreur NullPointer" + "\r\n");
             _log.debug(e.getMessage());
-            //TODO: etat
             return false;
-        }*/
+        }
     }
 
     @Override
@@ -318,7 +324,7 @@ public class Communication implements Runnable {
             _log.error(e.getMessage());
         }
         timestamp = new Timestamp(System.currentTimeMillis());
-        out.write("+OK Server ready <" + timestamp + "@EwaldEtLucas.ipc>");
+        out.write("+OK Server ready <" + timestamp + "@EwaldEtLucas.ipc>" + "\r\n");
         out.flush();
         etat = States.AUTHORIZATION;
         try {

@@ -42,18 +42,26 @@ public class MailList {
 
     public String toPOP3StatString() {
         return String.format(
-                "%d %d",
+                "%d %d\r\n",
                 getMailTotalNumber(), getOctetSize());
     }
 
+    public String toPOP3ListString() {
+        return getMailTotalNumber() + " message" + ((getMailTotalNumber() > 1) ? "s " : " ") + "(" + getOctetSize() + " octet" + ((getOctetSize() > 1) ? "s)" : ")") + "\r\n";
+    }
+
     public Mail getMail(int mailNumber) throws NoSuchMessageException, MarkedAsDeletedMessageException, InvalidMailNumberException {
-        if (mailNumber < 0) { throw new InvalidMailNumberException("Mail number must not be negative."); }
-        if (mailNumber >= usageList.size()) { throw new NoSuchMessageException("No such message : " + mailNumber); }
-        if (usageList.get(mailNumber).isToBeDeleted()) { throw new MarkedAsDeletedMessageException("Message marked as deleted."); }
-        return usageList.get(mailNumber).getMail();
+        return getMailWrapper(mailNumber).getMail();
     }
 
     public void deleteMail(int mailNumber) throws InvalidMailNumberException, MarkedAsDeletedMessageException, NoSuchMessageException {
-        usageList.get(mailNumber).setToBeDeleted(true);
+        getMailWrapper(mailNumber).setToBeDeleted(true);
+    }
+
+    public MailWrapper getMailWrapper(int mailNumber) throws NoSuchMessageException, MarkedAsDeletedMessageException, InvalidMailNumberException {
+        if (mailNumber < 1) { throw new InvalidMailNumberException("Mail number must not be negative nor zero."); }
+        if (mailNumber > usageList.size()) { throw new NoSuchMessageException("No such message : " + mailNumber); }
+        if (usageList.get(mailNumber - 1).isToBeDeleted()) { throw new MarkedAsDeletedMessageException("Message marked as deleted."); }
+        return usageList.get(mailNumber - 1);
     }
 }

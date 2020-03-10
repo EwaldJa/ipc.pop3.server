@@ -52,7 +52,7 @@ public class Mail {
 
     public String toPOP3ListString(int messageNumber) {
         return String.format(
-                "%d %d",
+                "%d %d\r\n",
                 messageNumber, getSize());
     }
 
