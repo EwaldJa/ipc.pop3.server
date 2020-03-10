@@ -91,6 +91,7 @@ public class Communication implements Runnable {
                                 out.write("+OK maildrop has " + mails.getMailTotalNumber() + " message" + ((mails.getMailTotalNumber() > 1) ? "s " : " ") + "(" + mails.getOctetSize() + " octet" + ((mails.getOctetSize() > 1) ? "s)" : ")"));
                                 out.flush();
                                 etat = States.TRANSACTION;
+                                return false;
                             } catch (InvalidUsernameException | InvalidPasswordException e) {
                                 attempts++;
                                 if (attempts >= 3) {
@@ -99,7 +100,8 @@ public class Communication implements Runnable {
                                     return true; }
                                 else {
                                     out.write("-ERR permission denied");
-                                    out.flush(); }
+                                    out.flush();
+                                    return false; }
                             } catch (ArrayIndexOutOfBoundsException e) {
                                 attempts++;
                                 if (attempts >= 3) {
@@ -109,12 +111,12 @@ public class Communication implements Runnable {
                                 } else {
                                     out.write("-ERR no digest provided");
                                     out.flush();
-                                }
+                                    return false; }
                             } catch (InterruptedOperationException e) {
                                 out.write("-ERR " + e.getMessage());
                                 out.flush();
+                                return false;
                             }
-                            return false;
 
                         default:
                             out.write("-ERR action indisponible à ce stade");
@@ -284,6 +286,7 @@ public class Communication implements Runnable {
 
 
         } catch (IllegalArgumentException e) {
+            e.printStackTrace();
             out.write("-ERR action inconnue");
             out.flush();
             //TODO: etat

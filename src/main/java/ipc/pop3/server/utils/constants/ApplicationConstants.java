@@ -18,8 +18,13 @@ public class ApplicationConstants {
     public static final int MAX_PASSWORD_LENGTH = 150;
 
     public enum PasswordCheckMode {
-        CLEAR,
-        MD5
+        CLEAR("CLEAR"),
+        MD5("MD5");
+        private String val;
+        PasswordCheckMode(String cmd) { this.val = cmd; }
+        public String val() {
+            return val;
+        }
     }
 
 }

@@ -7,7 +7,10 @@ import ipc.pop3.server.persistence.utils.MailList;
 import ipc.pop3.server.utils.exceptions.EmptyMailException;
 import ipc.pop3.server.utils.exceptions.InvalidSenderException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
 
 @Service
 public class MailService {
@@ -16,7 +19,9 @@ public class MailService {
     private MailRepository mailRepository;
 
     synchronized public MailList findByUser(User currUser) {
-        return new MailList(mailRepository.findByRecipient(currUser));
+        try {
+            return new MailList(mailRepository.findByRecipient(currUser)); }
+        catch (InvalidDataAccessResourceUsageException e) { return new MailList(new ArrayList<>());}
     }
 
     synchronized public Mail createMail(String subject, String message, String sender, User recipient) throws EmptyMailException, InvalidSenderException {

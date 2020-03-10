@@ -22,10 +22,12 @@ public class DatabaseConfigurationProvider implements ConfigurationProvider {
     public boolean checkUserPassword(String userpass, User user, Timestamp timestamp) {
         ApplicationConstants.PasswordCheckMode passwordCheckMode = null;
         try {
-            passwordCheckMode = ApplicationConstants.PasswordCheckMode.valueOf(configurationService.getConfiguration("passwordCheckMode").getConfiguration());
+            passwordCheckMode = ApplicationConstants.PasswordCheckMode.valueOf(configurationService.getConfiguration("passwordCheckMode").getValue());
         } catch (InterruptedOperationException e) {
             e.printStackTrace();
         } catch (InvalidConfigurationNameException e) {
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
             e.printStackTrace();
         }
         switch (passwordCheckMode) {
