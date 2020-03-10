@@ -3,6 +3,7 @@ package ipc.pop3.server.persistence.service;
 import ipc.pop3.server.persistence.dao.UserRepository;
 import ipc.pop3.server.persistence.model.User;
 import ipc.pop3.server.security.utils.PasswordUtils;
+import ipc.pop3.server.utils.configuration.ConfigurationProviderFactory;
 import ipc.pop3.server.utils.constants.ApplicationConstants;
 import ipc.pop3.server.utils.exceptions.InterruptedOperationException;
 import ipc.pop3.server.utils.exceptions.InvalidPasswordException;
@@ -28,7 +29,7 @@ public class UserService {
             throw new InterruptedOperationException("Error while trying to find user", e); }
         if (currUser == null) {
             throw new InvalidUsernameException("No such user"); }
-        if (PasswordUtils.checkMD5HashedPassword(usermd5pass,currUser.getPassword(), timestamp)) {
+        if (ConfigurationProviderFactory.getConfigurationProvider(ApplicationConstants.DEFAULT_MODE).checkUserPassword(usermd5pass, currUser, timestamp)) {
             return currUser; }
         else throw new InvalidPasswordException("Password does not match");
     }
@@ -45,37 +46,7 @@ public class UserService {
 
         checkPasswordValidity(userpass);
 
-        User newUser = new User(username, userpass, "nosalt");
-        return userRepository.save(newUser);
-    }
-
-
-    synchronized public User logUserWithSHA512(String username, String userpass) throws InvalidUsernameException, InvalidPasswordException {
-        User currUser;
-        try {
-            currUser = userRepository.findByUsername(username); }
-        catch (Exception e) {
-            throw new InvalidUsernameException("No such user", e); }
-
-        if (currUser.getPassword().equals(PasswordUtils.getHashedPassString(userpass, currUser.getUsersalt()))) {
-            return currUser; }
-        else throw new InvalidPasswordException("Password does not match");
-    }
-
-    synchronized public User registerUserWithSHA512(String username, String userpass) throws UserAlreadyExistingException, InvalidUsernameException, InvalidPasswordException {
-        checkUsernameValidity(username);
-
-        User existingUser = null;
-        try {
-            existingUser = userRepository.findByUsername(username); }
-        catch (Exception ignored) {}
-        if (existingUser != null) {
-            throw new UserAlreadyExistingException("This username is already taken"); }
-
-        checkPasswordValidity(userpass);
-
-        String usersalt = PasswordUtils.generateUserSalt();
-        User newUser = new User(username, PasswordUtils.getHashedPassString(userpass, usersalt), usersalt);
+        User newUser = new User(username, userpass);
         return userRepository.save(newUser);
     }
 

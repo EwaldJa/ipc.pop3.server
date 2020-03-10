@@ -11,20 +11,17 @@ public class User {
     @Id
     private String username;
     private String password;
-    private String usersalt;
 
     protected User () {}
 
-    public User (String username, String password, String usersalt) {
+    public User (String username, String password) {
         this.username = username;
         this.password = password;
-        this.usersalt = usersalt;
     }
 
     public User (User original) {
         this.username = new String(original.username);
         this.password = new String(original.password);
-        this.usersalt = new String(original.usersalt);
     }
 
     @Override
@@ -40,10 +37,6 @@ public class User {
 
     public String getPassword() {
         return password;
-    }
-
-    public String getUsersalt() {
-        return usersalt;
     }
 
     @Override
