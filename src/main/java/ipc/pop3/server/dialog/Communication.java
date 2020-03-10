@@ -75,9 +75,10 @@ public class Communication implements Runnable {
     private boolean recevoir() {
         try {
             String line = in.readLine();
-
+            System.out.println(line);
             String[] head = line.split(" ");
             Commands request = Commands.valueOf(head[0]);
+            System.out.println(head[0]);
             switch (request) {
                 //TODO
                 case APOP:
@@ -319,6 +320,11 @@ public class Communication implements Runnable {
         out.write("+OK Server ready <" + timestamp + "@EwaldEtLucas.ipc>");
         out.flush();
         etat = States.AUTHORIZATION;
+        try {
+            in.skip(21);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         while (!recevoir()) {/*Reçoit et répond au client*/}
         _log.debug("Fermeture de la communication" + CommID);
         try {
