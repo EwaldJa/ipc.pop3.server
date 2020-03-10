@@ -14,11 +14,9 @@ public class Mail {
     private String message;
     private String sender;
     @ManyToOne
-    @JoinColumn
+    @JoinColumn(name = "recipient", referencedColumnName = "username")
     private User recipient;
     private Timestamp date;
-
-    private boolean toBeDeleted;
 
     protected Mail () {}
 
@@ -36,13 +34,12 @@ public class Mail {
         this.recipient = new User(original.recipient);
         this.date = new Timestamp(original.date.getTime());
         this.id = original.id;
-        this.toBeDeleted = original.toBeDeleted;
     }
 
     public String toPOP3String() {
         String headers = String.format(
-                "From: <%s>\r\nTo: <'%s'>\r\nSubject: '%s'\r\nDate: '%s'\r\nMessage-ID: <'%d'@ewaldetlucas.ipc>\r\nToBeDeleted: '%s'\r\n",
-                sender, recipient.getUsername(), subject, date.toString(), id, toBeDeleted);
+                "From: <%s>\r\nTo: <'%s'>\r\nSubject: '%s'\r\nDate: '%s'\r\nMessage-ID: <'%d'@ewaldetlucas.ipc>\r\n",
+                sender, recipient.getUsername(), subject, date.toString(), id);
         StringBuffer messageBuffer = new StringBuffer();
         String remainingMessage = this.message;
             if (this.message.length() > 998) {
@@ -84,10 +81,6 @@ public class Mail {
     }
 
     public Timestamp getDate() { return date; }
-
-    public boolean isToBeDeleted() { return toBeDeleted; }
-
-    public void toBeDeleted(boolean toBeDeleted) { this.toBeDeleted = toBeDeleted; }
 
     @Override
     public boolean equals(Object o) {

@@ -32,7 +32,6 @@ public class MailService {
             throw new InvalidSenderException("The sender is not valid for this mail : '" + sender + "'.");
         }
         Mail newMail = new Mail(subject, message, sender, recipient);
-        newMail.toBeDeleted(false);
         return mailRepository.save(newMail);
     }
 

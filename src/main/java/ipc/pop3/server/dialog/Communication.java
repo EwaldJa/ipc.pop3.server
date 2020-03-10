@@ -75,10 +75,8 @@ public class Communication implements Runnable {
     private boolean recevoir() {
         try {
             String line = in.readLine();
-            System.out.println(line);
             String[] head = line.split(" ");
             Commands request = Commands.valueOf(head[0]);
-            System.out.println(head[0]);
             switch (request) {
                 //TODO
                 case APOP:

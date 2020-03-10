@@ -11,22 +11,22 @@ import java.util.List;
 public class MailList {
 
     private ArrayList<Mail> originalList;
-    private ArrayList<Mail> usageList;
+    private ArrayList<MailWrapper> usageList;
 
     public MailList(List<Mail> mailList) {
         this.originalList = new ArrayList<>();
         this.usageList = new ArrayList<>();
-        mailList.forEach(mail->{originalList.add(new Mail(mail));usageList.add(new Mail(mail));});
+        mailList.forEach(mail->{originalList.add(new Mail(mail));usageList.add(new MailWrapper(mail, false));});
     }
 
     public void reset() {
         usageList = new ArrayList<>();
-        originalList.forEach(mail->usageList.add(new Mail(mail)));
+        originalList.forEach(mail->usageList.add(new MailWrapper(mail, false)));
     }
 
     public int getOctetSize() {
         int somme = 0;
-        for (Mail mail : usageList) { somme += mail.getSize(); }
+        for (MailWrapper mail : usageList) { somme += mail.getMail().getSize(); }
         return somme;
     }
 
@@ -36,7 +36,7 @@ public class MailList {
 
     public ArrayList<Mail> getToBeDeletedList() {
         ArrayList<Mail> toBeDeletedList = new ArrayList<>();
-        usageList.forEach(mail->{if(mail.isToBeDeleted()){toBeDeletedList.add(mail);}});
+        usageList.forEach(mail->{if(mail.isToBeDeleted()){toBeDeletedList.add(mail.getMail());}});
         return toBeDeletedList;
     }
 
@@ -50,10 +50,10 @@ public class MailList {
         if (mailNumber < 0) { throw new InvalidMailNumberException("Mail number must not be negative."); }
         if (mailNumber >= usageList.size()) { throw new NoSuchMessageException("No such message : " + mailNumber); }
         if (usageList.get(mailNumber).isToBeDeleted()) { throw new MarkedAsDeletedMessageException("Message marked as deleted."); }
-        return usageList.get(mailNumber);
+        return usageList.get(mailNumber).getMail();
     }
 
     public void deleteMail(int mailNumber) throws InvalidMailNumberException, MarkedAsDeletedMessageException, NoSuchMessageException {
-        getMail(mailNumber).toBeDeleted(true);
+        usageList.get(mailNumber).setToBeDeleted(true);
     }
 }
