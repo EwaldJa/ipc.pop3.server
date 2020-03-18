@@ -45,8 +45,10 @@ public class Mail {
             if (this.message.length() > 998) {
                 while (remainingMessage.length() > 998) {
                     messageBuffer.append(remainingMessage, 0, 998);
+                    messageBuffer.append("\r\n");
                     remainingMessage = remainingMessage.substring(998); } }
-            messageBuffer.append(remainingMessage);
+        messageBuffer.append(remainingMessage);
+        messageBuffer.append("\r\n");
         return headers + "\r\n" + messageBuffer.toString() + ".\r\n";
     }
 

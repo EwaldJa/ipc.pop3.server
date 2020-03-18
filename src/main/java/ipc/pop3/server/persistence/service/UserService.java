@@ -2,7 +2,6 @@ package ipc.pop3.server.persistence.service;
 
 import ipc.pop3.server.persistence.dao.UserRepository;
 import ipc.pop3.server.persistence.model.User;
-import ipc.pop3.server.security.utils.PasswordUtils;
 import ipc.pop3.server.utils.configuration.ConfigurationProviderFactory;
 import ipc.pop3.server.utils.constants.ApplicationConstants;
 import ipc.pop3.server.utils.exceptions.InterruptedOperationException;
