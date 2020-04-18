@@ -272,6 +272,9 @@ public class Communication implements Runnable {
                                 } catch (InvalidMailNumberException e) {
                                     out.write("-ERR message number is not valid : '" + head[1] + "'" + "\r\n");
                                     out.flush();
+                                } catch (IndexOutOfBoundsException e) {
+                                    out.write("-ERR please specify a message number, none was provided" + "\r\n");
+                                    out.flush();
                                 }
                                 return false;
                             default:
