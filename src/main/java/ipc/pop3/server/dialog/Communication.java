@@ -231,6 +231,9 @@ public class Communication implements Runnable {
                                 } catch (InvalidMailNumberException e) {
                                     out.write("-ERR message number is not valid : '" + head[1] + "'" + "\r\n");
                                     out.flush();
+                                } catch (IndexOutOfBoundsException e) {
+                                    out.write("-ERR please specify a message number, none was provided" + "\r\n");
+                                    out.flush();
                                 }
                                 return false;
 
@@ -317,6 +320,12 @@ public class Communication implements Runnable {
     @Override
     public void run() {
         try {
+            clt_socket.startHandshake();
+        } catch (IOException e) {
+            _log.error("Erreur lors du handshake");
+            _log.error(e.getMessage());
+        }
+        try {
             in = new BufferedReader(new InputStreamReader(clt_socket.getInputStream()));
         } catch (IOException e) {
             _log.error("Erreur lors de l'initialisation de la réception");
@@ -332,14 +341,12 @@ public class Communication implements Runnable {
         out.write("+OK Server ready <" + timestamp + "@EwaldEtLucas.ipc>" + "\r\n");
         out.flush();
         etat = States.AUTHORIZATION;
-        System.err.println(in);
-        System.err.println(out);
-        try {
+        /*try {
             System.err.println(in.readLine());
             //in.skip(21);
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
         while (!recevoir()) {/*Reçoit et répond au client*/}
         _log.debug("Fermeture de la communication" + CommID);
         try {
